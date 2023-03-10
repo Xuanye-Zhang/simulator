@@ -233,6 +233,51 @@ namespace Simulator.Api
             }
         }
 
+        // UPDATE -- TANG YUN -- BEGIN
+        public void SendResultWithReq(JSONNode data, string reqUUID)
+        {
+            if (data == null)
+            {
+                data = JSONNull.CreateOrGet();
+            }
+
+            if (reqUUID == null)
+            {
+                reqUUID = JSONNull.CreateOrGet();
+            }
+
+            var json = new JSONObject();
+            json.Add("result", data);
+            json.Add("reqUUID", reqUUID);
+
+            lock (Instance)
+            {
+                if (Client != null)
+                {
+                    Client.SendJson(json);
+                }
+            }
+        }
+        public void SendError(ICommand source, string message, string reqUUID=null)
+        {
+            SendError(message, reqUUID);
+        }
+
+        private void SendError(string message, string reqUUID)
+        {
+            if (Loader.Instance.Network.IsClient)
+                return;
+            var json = new JSONObject();
+            json.Add("error", new JSONString(message));
+            json.Add("reqUUID", new JSONString(reqUUID));
+
+            lock (Instance)
+            {
+                Client.SendJson(json);
+            }
+        }
+        // UPDATE -- TANG YUN -- END
+
         void Awake()
         {
             roadLayer = LayerMask.NameToLayer("Default");

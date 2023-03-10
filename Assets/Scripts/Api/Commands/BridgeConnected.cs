@@ -20,23 +20,24 @@ namespace Simulator.Api.Commands
         {
             var uid = args["uid"].Value;
             var api = ApiManager.Instance;
+            var reqUUID = args["reqUUID"].Value;
 
             if (api.Agents.TryGetValue(uid, out GameObject obj))
             {
                 var bridge = obj.GetComponentInChildren<BridgeClient>();
                 if (bridge == null)
                 {
-                    api.SendError(this, $"Agent '{uid}' is missing bridge client");
+                    api.SendError(this, $"Agent '{uid}' is missing bridge client", reqUUID);
                 }
                 else
                 {
                     var result = new JSONBool(bridge.BridgeStatus == Status.Connected);
-                    api.SendResult(this, result);
+                    api.SendResultWithReq(result, reqUUID);
                 }
             }
             else
             {
-                api.SendError(this, $"Agent '{uid}' not found");
+                api.SendError(this, $"Agent '{uid}' not found", reqUUID);
             }
         }
     }

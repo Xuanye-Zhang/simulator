@@ -19,6 +19,7 @@ namespace Simulator.Api.Commands
 
         public void Execute(JSONNode args)
         {
+            var reqUUID = args["reqUUID"].Value;
             var uid = args["uid"].Value;
             var api = ApiManager.Instance;
 
@@ -46,11 +47,16 @@ namespace Simulator.Api.Commands
 
                 api.Agents.Remove(uid);
                 api.AgentUID.Remove(obj);
-                api.SendResult(this);
+                // api.SendResult(this);
+                // TANG YUN - UPDATE - BEGIN
+                JSONObject res = new JSONObject();
+                res["removed_agent_id"] = new JSONString(uid);
+                api.SendResultWithReq(res, reqUUID);
+                // TANG YUN - UPDATE - END
             }
             else
             {
-                api.SendError(this, $"Agent '{uid}' not found");
+                api.SendError(this, $"Agent '{uid}' not found", reqUUID);
             }
         }
     }

@@ -16,6 +16,7 @@ namespace Simulator.Api.Commands
 
         public void Execute(JSONNode args)
         {
+            var reqUUID = args["reqUUID"].Value;
             var uid = args["uid"].Value;
             var enable = args["enable"].AsBool;
             var api = ApiManager.Instance;
@@ -25,17 +26,18 @@ namespace Simulator.Api.Commands
                 var ped = obj.GetComponent<PedestrianController>();
                 if (ped == null)
                 {
-                    api.SendError(this, $"Agent '{uid}' is not a pedestrian");
+                    api.SendError(this, $"Agent '{uid}' is not a pedestrian", reqUUID);
                     return;
                 }
 
                 ped.WalkRandomly(enable);
 
-                api.SendResult(this);
+                // api.SendResult(this);
+                api.SendResultWithReq(null, reqUUID);
             }
             else
             {
-                api.SendError(this, $"Agent '{uid}' not found");
+                api.SendError(this, $"Agent '{uid}' not found", reqUUID);
             }
         }
     }

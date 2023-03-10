@@ -38,6 +38,10 @@ namespace Simulator.Bridge.Data
         public double Time;
         public uint Sequence;
         public Detected3DObject[] Data;
+
+        // TANG YUN -- UPDATE -- BEGIN
+        public double LidarTime;
+        // TANG YUN -- UPDATE -- END
     }
 
     public class Detected3DObjectArray

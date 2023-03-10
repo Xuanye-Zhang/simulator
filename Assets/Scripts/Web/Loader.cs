@@ -150,6 +150,7 @@ namespace Simulator
         public SimulatorManager SimulatorManagerPrefab;
         public ApiManager ApiManagerPrefab;
         public TestCaseProcessManager TestCaseProcessManagerPrefab;
+        // public MeshDeformationObstacleManager meshDeformationObstacleManagerPrefab = MeshDeformationObstacleManager.Instance;
 
         public NetworkSettings NetworkSettings;
 
@@ -545,6 +546,9 @@ namespace Simulator
                         var API = Instantiate(ApiManagerPrefab);
                         API.name = "ApiManager";
 
+                        // var meshDeformManager = Instantiate(Instance.meshDeformationObstacleManagerPrefab);
+                        // meshDeformManager.name = "MeshDeformationObstacleManager";
+
                         ConnectionUI.SetLoaderUIState(ConnectionUI.LoaderUIStateType.READY);
 
                         // Spawn external test case process
@@ -675,6 +679,10 @@ namespace Simulator
                         {
                             SceneManager.MoveGameObjectToScene(ApiManager.Instance.gameObject, SceneManager.GetActiveScene());
                         }
+
+                        // if (MeshDeformationObstacleManager.Instance != null) {
+                        //        SceneManager.MoveGameObjectToScene(MeshDeformationObstacleManager.Instance.gameObject, SceneManager.GetActiveScene());
+                        // }
 
                         var loader = SceneManager.LoadSceneAsync(LoaderScene);
                         loader.completed += op =>

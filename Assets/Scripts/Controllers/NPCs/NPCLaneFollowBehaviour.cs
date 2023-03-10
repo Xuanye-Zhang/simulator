@@ -12,6 +12,25 @@ using Simulator.Api;
 using Simulator.Map;
 using Simulator.Utilities;
 
+// TANG YUN - UPDATE - BEGIN
+public class LaneToFollow
+{
+    public Vector3 start;
+    public Vector3 end;
+
+    public LaneToFollow(Vector3 start, Vector3 end)
+    {
+        this.start = start;
+        this.end = end;
+    }
+
+    public override string ToString()
+    {
+        return "start: " + this.start + " end: " + this.end;
+    }
+}
+// TANG YUN - UPDATE - END
+
 public class NPCLaneFollowBehaviour : NPCBehaviourBase
 {
     #region vars
@@ -79,6 +98,11 @@ public class NPCLaneFollowBehaviour : NPCBehaviourBase
 
     protected float stopSignWaitTime = 1f; // TODO 3sec
     protected float currentStopTime = 0f;
+
+    // TANG YUN - UPDATE - BEGIN
+    public List<LaneToFollow> lanesToFollow = new List<LaneToFollow>();
+    public float customSpeed = 0f;
+    // TANG YUN - UPDATE - END
 
     protected Collider[] MaxHitColliders = new Collider[5];
     #endregion
@@ -585,6 +609,85 @@ public class NPCLaneFollowBehaviour : NPCBehaviourBase
         isCurve = path < -1f || path > 1f ? true : false;
     }
 
+// TANG YUN - UPDATE - BEGIN
+    protected void GetNextLaneDefault()
+    // TANG YUN - UPDATE - BEGIN
+    {
+        // last index of current lane data
+        if (currentMapLane?.nextConnectedLanes.Count >= 1) // choose next path and set waypoints
+        {
+            currentMapLane = currentMapLane.nextConnectedLanes[RandomGenerator.Next(currentMapLane.nextConnectedLanes.Count)];
+            laneSpeedLimit = currentMapLane.speedLimit;
+            aggressionAdjustRate = laneSpeedLimit / 11.176f; // 11.176 m/s corresponds to 25 mph
+            normalSpeed = RandomGenerator.NextFloat(laneSpeedLimit - 3 + aggression, laneSpeedLimit + 1 + aggression);
+            SetLaneData(currentMapLane.mapWorldPositions);
+            SetTurnSignal();
+        }
+        else // issue getting new waypoints so despawn
+        {
+            // TODO raycast to see adjacent lanes? Need system
+            Despawn();
+        }
+    }
+
+    // TANG YUN - UPDATE - BEGIN
+    protected void GetNextLane()
+    {
+        if (lanesToFollow.Count == 0) {
+            GetNextLaneDefault();
+            return;
+        }
+
+        float minDistAll = float.PositiveInfinity;
+        int minLaneIndex = 0;
+
+        List<MapTrafficLane> outgoingLanes = currentMapLane.nextConnectedLanes;
+
+        if (outgoingLanes.Count >= 1)
+        {
+            for (int i =0; i < outgoingLanes.Count; i++) {
+                MapLane outgoingLane = outgoingLanes[i];
+                Vector3 laneStart = outgoingLane.mapWorldPositions[0];
+                Vector3 laneEnd = outgoingLane.mapWorldPositions[outgoingLane.mapWorldPositions.Count - 1];
+                float minDistPerLane = float.PositiveInfinity;
+
+                for (int j = 0; j < lanesToFollow.Count; j++)
+                {
+                    LaneToFollow laneToFollow = lanesToFollow[j];
+                    float dist = Vector3.Distance(laneToFollow.start, laneStart) + Vector3.Distance(laneToFollow.end, laneEnd);
+                    if (dist < minDistPerLane)
+                    {
+                        minDistPerLane = dist;
+                    }
+                }
+
+                if (minDistPerLane < minDistAll) {
+                    minDistAll = minDistPerLane;
+                    minLaneIndex = i;
+                }
+            }
+
+            currentMapLane = outgoingLanes[minLaneIndex];
+            laneSpeedLimit = currentMapLane.speedLimit;
+            if (customSpeed > 0) {
+                // normalSpeed = Mathf.Min(customSpeed, laneSpeedLimit);
+                normalSpeed = customSpeed;
+            } else {
+                aggressionAdjustRate = laneSpeedLimit / 11.176f; // 11.176 m/s corresponds to 25 mph
+                normalSpeed = RandomGenerator.NextFloat(laneSpeedLimit - 3 + aggression, laneSpeedLimit + 1 + aggression);
+            }
+
+            SetLaneData(currentMapLane.mapWorldPositions);
+            SetTurnSignal();
+        }
+        else // issue getting new waypoints so despawn
+        {
+            // TODO raycast to see adjacent lanes? Need system
+            Despawn();
+        }
+    }
+    // TANG YUN - UPDATE - END
+
     protected IEnumerator DelayChangeLane()
     {
         if (currentMapLane == null)
@@ -660,30 +763,46 @@ public class NPCLaneFollowBehaviour : NPCBehaviourBase
         {
             if (currentMapLane.leftLaneForward != null)
             {
-                if (!isFrontLeftDetect)
-                {
-                    currentMapLane = currentMapLane.leftLaneForward;
-                    laneSpeedLimit = currentMapLane.speedLimit;
-                    aggressionAdjustRate = laneSpeedLimit / 11.176f; // 11.176 m/s corresponds to 25 mph
-                    SetChangeLaneData(currentMapLane.mapWorldPositions);
-                    controller.Coroutines.Add(FixedUpdateManager.StartCoroutine(DelayOffTurnSignals()));
-                    ApiManager.Instance?.AddLaneChange(gameObject);
-                }
+                // TANG YUN - UPDATE - BEGIN
+                // if (!isFrontLeftDetect)
+                // {
+                //     currentMapLane = currentMapLane.leftLaneForward;
+                //     laneSpeedLimit = currentMapLane.speedLimit;
+                //     aggressionAdjustRate = laneSpeedLimit / 11.176f; // 11.176 m/s corresponds to 25 mph
+                //     SetChangeLaneData(currentMapLane.mapWorldPositions);
+                //     controller.Coroutines.Add(FixedUpdateManager.StartCoroutine(DelayOffTurnSignals()));
+                //     ApiManager.Instance?.AddLaneChange(gameObject);
+                // }
+                currentMapLane = currentMapLane.leftLaneForward;
+                laneSpeedLimit = currentMapLane.speedLimit;
+                aggressionAdjustRate = laneSpeedLimit / 11.176f; // 11.176 m/s corresponds to 25 mph
+                SetChangeLaneData(currentMapLane.mapWorldPositions);
+                controller.Coroutines.Add(FixedUpdateManager.StartCoroutine(DelayOffTurnSignals()));
+                ApiManager.Instance?.AddLaneChange(gameObject);
+                // TANG YUN - UPDATE - END
             }
         }
         else
         {
             if (currentMapLane.rightLaneForward != null)
             {
-                if (!isFrontRightDetect)
-                {
-                    currentMapLane = currentMapLane.rightLaneForward;
-                    laneSpeedLimit = currentMapLane.speedLimit;
-                    aggressionAdjustRate = laneSpeedLimit / 11.176f; // 11.176 m/s corresponds to 25 mph
-                    SetChangeLaneData(currentMapLane.mapWorldPositions);
-                    controller.Coroutines.Add(FixedUpdateManager.StartCoroutine(DelayOffTurnSignals()));
-                    ApiManager.Instance?.AddLaneChange(gameObject);
-                }
+                // TANG YUN - UPDATE - BEGIN
+                // if (!isFrontRightDetect)
+                // {
+                //     currentMapLane = currentMapLane.rightLaneForward;
+                //     laneSpeedLimit = currentMapLane.speedLimit;
+                //     aggressionAdjustRate = laneSpeedLimit / 11.176f; // 11.176 m/s corresponds to 25 mph
+                //     SetChangeLaneData(currentMapLane.mapWorldPositions);
+                //     controller.Coroutines.Add(FixedUpdateManager.StartCoroutine(DelayOffTurnSignals()));
+                //     ApiManager.Instance?.AddLaneChange(gameObject);
+                // }
+                currentMapLane = currentMapLane.rightLaneForward;
+                laneSpeedLimit = currentMapLane.speedLimit;
+                aggressionAdjustRate = laneSpeedLimit / 11.176f; // 11.176 m/s corresponds to 25 mph
+                SetChangeLaneData(currentMapLane.mapWorldPositions);
+                controller.Coroutines.Add(FixedUpdateManager.StartCoroutine(DelayOffTurnSignals()));
+                ApiManager.Instance?.AddLaneChange(gameObject);
+                // TANG YUN - UPDATE - END
             }
         }
     }
@@ -929,18 +1048,40 @@ public class NPCLaneFollowBehaviour : NPCBehaviourBase
         blocking = blocking ?? leftClosestHitInfo.transform;
 
         float tempS = 0f;
-        // TODO logic has changed and this is causing an issue with behavior SetFrontDetectSpeed should never have frontClosestHitInfo.distance > stopHitDistance
-        if (Vector3.Dot(transform.forward, blocking.transform.forward) > 0.7f) // detected is on similar vector
-        {
+        // TANG YUN - UPDATE - BEGIN
+        if (blocking.tag == "Player") {
             if (frontClosestHitInfo.distance > stopHitDistance)
             {
                 tempS = (normalSpeed) * (frontClosestHitInfo.distance / stopHitDistance);
             }
+        } else {
+            if (Vector3.Dot(transform.forward, blocking.transform.forward) > 0.7f) // detected is on similar vector
+            {
+                if (frontClosestHitInfo.distance > stopHitDistance)
+                {
+                 tempS = (normalSpeed) * (frontClosestHitInfo.distance / stopHitDistance);
+             }
+            }
+            else if (Vector3.Dot(transform.forward, blocking.transform.forward) < -0.2f && (isRightTurn || isLeftTurn))
+            {
+                Debug.Log("this condition is triggered");
+                tempS = normalSpeed;
+            }
         }
-        //else if (Vector3.Dot(transform.forward, blocking.transform.forward) < -0.2f && (isRightTurn || isLeftTurn))
-        //{
-        //    tempS = normalSpeed;
-        //}
+        // // TODO logic has changed and this is causing an issue with behavior SetFrontDetectSpeed should never have frontClosestHitInfo.distance > stopHitDistance
+        // if (Vector3.Dot(transform.forward, blocking.transform.forward) > 0.7f) // detected is on similar vector
+        // {
+        //     if (frontClosestHitInfo.distance > stopHitDistance)
+        //     {
+        //         tempS = (normalSpeed) * (frontClosestHitInfo.distance / stopHitDistance);
+        //     }
+        // }
+        // //else if (Vector3.Dot(transform.forward, blocking.transform.forward) < -0.2f && (isRightTurn || isLeftTurn))
+        // //{
+        // //    tempS = normalSpeed;
+        // //}
+        // TANG YUN - UPDATE - END
+        
         return tempS;
     }
     #endregion

@@ -210,6 +210,46 @@ public class MapManager : MonoBehaviour
         }
     }
 
+    // TANG YUN - UPDATE - BEGIN
+    /*
+     * Fix the ego position altitude.
+     * default altitude from Apollo map is 0, sometimes is way above the ground and sometimes is below.
+     * Take average height of closest segment plus 1 meter offset
+     */
+
+    public Vector3 FixPositionAltitude(Vector3 position, float offset)
+    {
+        Vector3 newPos = new Vector3(position.x, position.y, position.z);
+
+        float minDist = float.PositiveInfinity;
+        float avgAlt = position.y;
+
+        foreach (var lane in trafficLanes)
+        {
+            if (lane.mapWorldPositions.Count >= 2)
+            {
+                for (int i = 0; i < lane.mapWorldPositions.Count - 1; i++)
+                {
+                    var p0 = lane.mapWorldPositions[i];
+                    var p1 = lane.mapWorldPositions[i + 1];
+
+                    float d = Utility.SqrDistanceToSegment(p0, p1, position);
+                    if (d < minDist)
+                    {
+                        minDist = d;
+                        avgAlt = (p0.y + p1.y) / 2f + offset;
+                    }
+                }
+            }
+        }
+
+        newPos.y = avgAlt;
+        Debug.Log("Spawning agent Position (altitude fixed) " + newPos);
+
+        return newPos;
+    }
+    // TANG YUN - UPDATE - END
+
     public MapParkingSpace GetClosestParking(Vector3 position)
     {
         float min = float.MaxValue;

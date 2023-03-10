@@ -50,6 +50,9 @@ namespace Simulator.Bridge.Data
         public Vector3 Velocity;
         public Vector3 AngularVelocity;
         public float WheelAngle; // rad
+        // TANG YUN -- UPDATE -- BEGIN
+        public double LidarTime;
+        // TANG YUN -- UPDATE -- END
     }
 
     public class GpsInsData

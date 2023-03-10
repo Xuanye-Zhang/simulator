@@ -104,6 +104,7 @@ public class NPCWaypointBehaviour : NPCBehaviourBase
         CurrentIndex = 0;
         CurrentLoopIndex = 0;
         CurrentDeactivate = LaneDeactivate[CurrentIndex];
+
         if (IdleCoroutine != null)
         {
             FixedUpdateManager.StopCoroutine(IdleCoroutine);
@@ -121,6 +122,7 @@ public class NPCWaypointBehaviour : NPCBehaviourBase
         }
         WaypointState = WaypointDriveState.Drive;
     }
+
 
     public void SetFollowWaypoints(List<DriveWaypoint> waypoints, bool loop, WaypointsPathType pathType)
     {

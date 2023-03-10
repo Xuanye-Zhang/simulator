@@ -20,6 +20,7 @@ namespace Simulator.Api.Commands
 
         public void Execute(JSONNode args)
         {
+            var reqUUID = args["reqUUID"].Value;
             var api = ApiManager.Instance;
             var uid = args["uid"].Value;
             var waypoints = args["waypoints"].AsArray;
@@ -33,13 +34,13 @@ namespace Simulator.Api.Commands
             else if (!Enum.TryParse(pathTypeNode, true, out waypointsPathType))
             {
                 waypointsPathType = WaypointsPathType.Linear;
-                api.SendError(this, $"Could not parse the waypoints path type \"{waypointsPathType}\".");
+                api.SendError(this, $"Could not parse the waypoints path type \"{waypointsPathType}\".", reqUUID);
             }
             var loop = args["loop"].AsBool;
 
             if (waypoints.Count == 0)
             {
-                api.SendError(this, $"Waypoint list is empty");
+                api.SendError(this, $"Waypoint list is empty", reqUUID);
                 return;
             }
             
@@ -48,7 +49,7 @@ namespace Simulator.Api.Commands
                 var ped = obj.GetComponent<PedestrianController>();
                 if (ped == null)
                 {
-                    api.SendError(this, $"Agent '{uid}' is not a pedestrian agent");
+                    api.SendError(this, $"Agent '{uid}' is not a pedestrian agent", reqUUID);
                     return;
                 }
 
@@ -56,7 +57,10 @@ namespace Simulator.Api.Commands
                 var previousPosition = ped.transform.position;
                 for (int i = 0; i < waypoints.Count; i++)
                 {
+                    // TANG YUN UPDATE -- BEGIN
                     var position = waypoints[i]["position"].ReadVector3();
+                    position = SimulatorManager.Instance.MapManager.FixPositionAltitude(position, 0.1f);
+                    // TANG YUN UPDATE -- END
                     var angle = waypoints[i].HasKey("angle") ? 
                             waypoints[i]["angle"].ReadVector3() : 
                             Quaternion.LookRotation((position - previousPosition).normalized).eulerAngles;
@@ -76,11 +80,12 @@ namespace Simulator.Api.Commands
                 var waypointBehaviour = ped.SetBehaviour<PedestrianWaypointBehaviour>();
                 waypointBehaviour.SetFollowWaypoints(wp, loop, waypointsPathType);
                 api.RegisterAgentWithWaypoints(ped.gameObject);
-                api.SendResult(this);
+                // api.SendResult(this);
+                api.SendResultWithReq(null, reqUUID);
             }
             else
             {
-                api.SendError(this, $"Agent '{uid}' not found");
+                api.SendError(this, $"Agent '{uid}' not found", reqUUID);
             }
         }
     }

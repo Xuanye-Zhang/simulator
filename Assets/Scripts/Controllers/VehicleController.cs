@@ -9,8 +9,74 @@ using UnityEngine;
 using System.Collections.Generic;
 using Simulator.Api;
 
+// TANG YUN - UPDATE - BEGIN
+public class NPCLaneFollowConfig
+{
+    public GameObject npc;
+    public float customSpeed;
+    public List<LaneToFollow> lanesToFollow;
+
+    public NPCLaneFollowConfig(GameObject npc, float customSpeed)
+    {
+        this.npc = npc;
+        this.customSpeed = customSpeed;
+        this.lanesToFollow = new List<LaneToFollow>();
+    }
+}
+
+public class NPCLaneFollowConfigs
+{
+    public Vector3 destination;
+    public float triggerDist;
+    public List<NPCLaneFollowConfig> configs;
+    public bool npcDoneConfig;
+
+    public NPCLaneFollowConfigs(Vector3 destination, float triggerDist) 
+    {  
+        this.destination = destination;
+        this.destination.y = 0;
+        this.triggerDist = triggerDist;
+        this.configs = new List<NPCLaneFollowConfig>();
+        this.npcDoneConfig = false;
+    }
+
+    public bool CheckTrigger(Vector3 currentPos)
+    {
+        Vector3 pos = new Vector3(currentPos.x, 0, currentPos.z);
+        return Vector3.Distance(this.destination, pos) <= this.triggerDist;
+    }
+
+    public void ConfigNPCLaneFollow() {
+        if (this.npcDoneConfig) {
+            return;
+        }
+
+        for(int i = 0; i < this.configs.Count; i++) {
+            NPCLaneFollowConfig config = this.configs[i];
+            
+            var npcController = config.npc.GetComponent<NPCController>();
+            if (npcController == null)
+            {
+                continue;
+            }
+
+            var behaviour = npcController.SetBehaviour<NPCLaneFollowBehaviour>();
+            behaviour.SetFollowClosestLane(config.customSpeed, true);
+            behaviour.customSpeed = config.customSpeed;
+            behaviour.lanesToFollow = config.lanesToFollow;
+        }
+
+        this.npcDoneConfig = true;
+    }
+}
+// TANG YUN - UPDATE - END
+
 public class VehicleController : AgentController
 {
+    // TANG YUN - UPDATE - BEGIN
+    public NPCLaneFollowConfigs npcLaneFollowConfigs;
+    // TANG YUN - UPDATE - END
+
     private IVehicleDynamics Dynamics;
     private VehicleActions Actions;
     private IAgentController Controller;
@@ -52,6 +118,20 @@ public class VehicleController : AgentController
             SimpleAcceleration = SimpleVelocity - previousVelocity;
             LastRBPosition = position;
         }
+
+        // TANG YUN - UPDATE - BEGIN
+        if (npcLaneFollowConfigs == null) {
+            return;
+        }
+
+        if (npcLaneFollowConfigs.npcDoneConfig) {
+            return;
+        }
+
+        if (npcLaneFollowConfigs.CheckTrigger(transform.position)) {
+            npcLaneFollowConfigs.ConfigNPCLaneFollow();
+        }
+        // TANG YUN - UPDATE - END
     }
 
     public override void Init()

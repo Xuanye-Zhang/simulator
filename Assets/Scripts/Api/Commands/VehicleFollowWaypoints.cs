@@ -20,6 +20,7 @@ namespace Simulator.Api.Commands
 
         public void Execute(JSONNode args)
         {
+            var reqUUID = args["reqUUID"].Value;
             var api = ApiManager.Instance;
             var uid = args["uid"].Value;
             var waypoints = args["waypoints"].AsArray;
@@ -33,13 +34,13 @@ namespace Simulator.Api.Commands
             else if (!Enum.TryParse(pathTypeNode, true, out waypointsPathType))
             {
                 waypointsPathType = WaypointsPathType.Linear;
-                api.SendError(this, $"Could not parse the waypoints path type \"{waypointsPathType}\".");
+                api.SendError(this, $"Could not parse the waypoints path type \"{waypointsPathType}\".", reqUUID);
             }
             var loop = args["loop"];
 
             if (waypoints.Count == 0)
             {
-                api.SendError(this, $"Waypoint list is empty");
+                api.SendError(this, $"Waypoint list is empty", reqUUID);
                 return;
             }
             
@@ -48,7 +49,7 @@ namespace Simulator.Api.Commands
                 var npc = obj.GetComponent<NPCController>();
                 if (npc == null)
                 {
-                    api.SendError(this, $"Agent '{uid}' is not a NPC agent");
+                    api.SendError(this, $"Agent '{uid}' is not a NPC agent", reqUUID);
                     return;
                 }
 
@@ -82,11 +83,12 @@ namespace Simulator.Api.Commands
                 var waypointFollow = npc.SetBehaviour<NPCWaypointBehaviour>();
                 waypointFollow.SetFollowWaypoints(wp, loopValue, waypointsPathType); // TODO use NPCController to init waypoint data
                 api.RegisterAgentWithWaypoints(npc.gameObject);
-                api.SendResult(this);
+                // api.SendResult(this);
+                api.SendResultWithReq(null, reqUUID);
             }
             else
             {
-                api.SendError(this, $"Agent '{uid}' not found");
+                api.SendError(this, $"Agent '{uid}' not found", reqUUID);
             }
         }
     }

@@ -18,12 +18,13 @@ namespace Simulator.Api.Commands
 
         public void Execute(JSONNode args)
         {
+            var reqUUID = args["reqUUID"].Value;
             var api = ApiManager.Instance;
 
             var map = MapOrigin.Find();
             if (map == null)
             {
-                api.SendError(this, "MapOrigin not found. Is the scene loaded?");
+                api.SendError(this, "MapOrigin not found. Is the scene loaded?", reqUUID);
                 return;
             }
 
@@ -44,7 +45,8 @@ namespace Simulator.Api.Commands
             result.Add("altitude", new JSONNumber(position.y + map.AltitudeOffset));
             result.Add("orientation", new JSONNumber(-rotation.y));
 
-            api.SendResult(this, result);
+            // api.SendResult(this, result);
+            api.SendResultWithReq(result, reqUUID);
         }
     }
 

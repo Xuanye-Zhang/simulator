@@ -16,11 +16,12 @@ namespace Simulator.Api.Commands
 
         public void Execute(JSONNode args)
         {
+            var reqUUID = args["reqUUID"].Value;
             var api = ApiManager.Instance;
             var env = SimulatorManager.Instance.EnvironmentEffectsManager;
             if (env == null)
             {
-                api.SendError(this, "Environment Effects Manager not found. Is the scene loaded?");
+                api.SendError(this, "Environment Effects Manager not found. Is the scene loaded?", reqUUID);
                 return;
             }
 
@@ -30,7 +31,8 @@ namespace Simulator.Api.Commands
             env.Cloud = Mathf.Clamp01(args["cloudiness"].AsFloat);
             env.Damage = Mathf.Clamp01(args["damage"].AsFloat);
 
-            api.SendResult(this);
+            // api.SendResult(this);
+            api.SendResultWithReq(null, reqUUID);
         }
     }
 }

@@ -40,8 +40,10 @@ namespace Simulator.Api.Commands
             var api = ApiManager.Instance;
             // instead of relying on ApiMAnager's exception handling,
             // we wrap the whole method since we are async
+            var reqUUID = args["reqUUID"].Value;
             try
             {
+                
                 if (sim == null)
                 {
                     throw new Exception("SimulatorManager not found! Is scene loaded?");
@@ -162,7 +164,8 @@ namespace Simulator.Api.Commands
                         }
                     }
 
-                    api.SendResult(this, new JSONString(uid));
+                    // api.SendResult(this, new JSONString(uid));
+                    api.SendResultWithReq(new JSONString(uid), reqUUID);
                 }
                 else if (type == (int)AgentType.Npc)
                 {
@@ -195,7 +198,8 @@ namespace Simulator.Api.Commands
                     uid = npcController.name;
                     api.Agents.Add(uid, npcController.gameObject);
                     api.AgentUID.Add(npcController.gameObject, uid);
-                    api.SendResult(this, new JSONString(uid));
+                    // api.SendResult(this, new JSONString(uid));
+                    api.SendResultWithReq(new JSONString(uid), reqUUID);
 
                     // Override the color argument as NPCController may change the NPC color
                     if (Loader.Instance.Network.IsMaster)
@@ -238,7 +242,8 @@ namespace Simulator.Api.Commands
 
                     api.Agents.Add(uid, pedController.gameObject);
                     api.AgentUID.Add(pedController.gameObject, uid);
-                    api.SendResult(this, new JSONString(uid));
+                    // api.SendResult(this, new JSONString(uid));
+                    api.SendResultWithReq(new JSONString(uid), reqUUID);
                 }
                 else
                 {
@@ -248,7 +253,9 @@ namespace Simulator.Api.Commands
             catch (Exception e)
             {
                 Debug.LogException(e);
-                api.SendError(this, e.Message);
+                // api.SendError(this, e.Message);
+                api.SendError(this, e.Message, reqUUID);
+                return;
             }
             finally
             {

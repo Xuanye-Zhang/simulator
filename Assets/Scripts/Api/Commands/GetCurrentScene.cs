@@ -15,15 +15,16 @@ namespace Simulator.Api.Commands
 
         public void Execute(JSONNode args)
         {
+            var reqUUID = args["reqUUID"].Value;
             var api = ApiManager.Instance;
             var scene = api.CurrentScene;
             if (string.IsNullOrEmpty(scene))
             {
-                api.SendResult(this);
+                api.SendResultWithReq(null, reqUUID);
             }
             else
             {
-                api.SendResult(this, new JSONString(scene));
+                api.SendResultWithReq(new JSONString(scene), reqUUID);
             }
         }
     }

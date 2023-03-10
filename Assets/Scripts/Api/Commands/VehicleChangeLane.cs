@@ -16,6 +16,7 @@ namespace Simulator.Api.Commands
 
         public void Execute(JSONNode args)
         {
+            var reqUUID = args["reqUUID"].Value;
             var uid = args["uid"].Value;
             var isLeft = args["isLeftChange"].AsBool;
             var api = ApiManager.Instance;
@@ -25,16 +26,17 @@ namespace Simulator.Api.Commands
                 var npc = obj.GetComponent<NPCLaneFollowBehaviour>();
                 if (npc == null)
                 {
-                    api.SendError(this, $"Agent '{uid}' is not a NPC agent with lane capabilities");
+                    api.SendError(this, $"Agent '{uid}' is not a NPC agent with lane capabilities", reqUUID);
                     return;
                 }
 
                 npc.ForceLaneChange(isLeft);
-                api.SendResult(this);
+                // api.SendResult(this);
+                api.SendResultWithReq(null, reqUUID);
             }
             else
             {
-                api.SendError(this, $"Agent '{uid}' not found");
+                api.SendError(this, $"Agent '{uid}' not found", reqUUID);
             }
         }
     }

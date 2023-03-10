@@ -20,6 +20,7 @@ namespace Simulator.Api.Commands
         {
             var spawns = new JSONArray();
             var api = ApiManager.Instance;
+            var reqUUID = args["reqUUID"].Value;
 
             foreach (var spawn in Object.FindObjectsOfType<SpawnInfo>().OrderBy(spawn => spawn.name))
             {
@@ -49,7 +50,7 @@ namespace Simulator.Api.Commands
                 s.Add("destinations", destinations);
                 spawns.Add(s);
             }
-            api.SendResult(this, spawns);
+            api.SendResultWithReq(spawns, reqUUID);
         }
     }
 }

@@ -196,6 +196,9 @@ public class SimulatorManager : MonoBehaviour
         CustomPassManager = InstantiateManager(customPassManagerPrefab, ManagerHolder.transform);
         UIManager = InstantiateManager(uiManagerPrefab, ManagerHolder.transform);
 
+        // custom init
+        //CustomnpcManager = InstantiateManager(customnpcManagerPrefab, ManagerHolder.transform);
+
         controls.Simulator.ToggleNPCS.performed += ctx => NPCManager.NPCActive = !NPCManager.NPCActive;
         controls.Simulator.TogglePedestrians.performed += ctx => PedestrianManager.PedestriansActive = !PedestrianManager.PedestriansActive;
         controls.Simulator.ToggleAgent.performed += ctx =>

@@ -16,6 +16,7 @@ namespace Simulator.Api.Commands
 
         public void Execute(JSONNode args)
         {
+            var reqUUID = args["reqUUID"].Value;
             var uid = args["uid"].Value;
             var follow = args["follow"].AsBool;
             var maxSpeed = args["max_speed"].AsFloat;
@@ -27,7 +28,7 @@ namespace Simulator.Api.Commands
                 var npc = obj.GetComponent<NPCController>();
                 if (npc == null)
                 {
-                    api.SendError(this, $"Agent '{uid}' is not a NPC agent");
+                    api.SendError(this, $"Agent '{uid}' is not a NPC agent", reqUUID);
                     return;
                 }
 
@@ -41,11 +42,12 @@ namespace Simulator.Api.Commands
                     npc.SetBehaviour<NPCManualBehaviour>();
                 }
 
-                api.SendResult(this);
+                // api.SendResult(this);
+                api.SendResultWithReq(null, reqUUID);
             }
             else
             {
-                api.SendError(this, $"Agent '{uid}' not found");
+                api.SendError(this, $"Agent '{uid}' not found", reqUUID);
             }
         }
     }

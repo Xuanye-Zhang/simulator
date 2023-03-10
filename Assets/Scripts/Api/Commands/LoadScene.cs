@@ -27,9 +27,11 @@ namespace Simulator.Api.Commands
         public float StartRealtime { get; set; }
 
         public event Action<ILockingCommand> Executed;
+        static string reqUUID = "";
 
         private async Task LoadMap(JSONNode args, string userMapId, int? seed = null)
         {
+            reqUUID = args["reqUUID"].Value;
             var api = ApiManager.Instance;
             MapDetailData mapData = await ConnectionManager.API.GetByIdOrName<MapDetailData>(userMapId);
             var ret = await DownloadManager.GetAsset(BundleConfig.BundleTypes.Environment, mapData.AssetGuid, mapData.Name);
@@ -60,7 +62,7 @@ namespace Simulator.Api.Commands
                 {
                     zip.Close();
                     api.SendError(sourceCommand,
-                        "Out of date Map AssetBundle. Please check content website for updated bundle or rebuild the bundle.");
+                        "Out of date Map AssetBundle. Please check content website for updated bundle or rebuild the bundle.", reqUUID);
                     sourceCommand.Executed?.Invoke(sourceCommand);
                     yield break;
                 }
@@ -83,7 +85,7 @@ namespace Simulator.Api.Commands
 
                 if (mapBundle == null)
                 {
-                    api.SendError(sourceCommand, $"Failed to load environment from '{map.AssetGuid}' asset bundle '{map.Name}'");
+                    api.SendError(sourceCommand, $"Failed to load environment from '{map.AssetGuid}' asset bundle '{map.Name}'", reqUUID);
                     sourceCommand.Executed?.Invoke(sourceCommand);
                     yield break;
                 }
@@ -93,7 +95,7 @@ namespace Simulator.Api.Commands
                 var scenes = mapBundle.GetAllScenePaths();
                 if (scenes.Length != 1)
                 {
-                    api.SendError(sourceCommand, $"Unsupported environment in '{map.AssetGuid}' asset bundle '{map.Name}', only 1 scene expected");
+                    api.SendError(sourceCommand, $"Unsupported environment in '{map.AssetGuid}' asset bundle '{map.Name}', only 1 scene expected", reqUUID);
                     sourceCommand.Executed?.Invoke(sourceCommand);
                     yield break;
                 }
@@ -133,7 +135,8 @@ namespace Simulator.Api.Commands
             api.CurrentSceneName = map.Name;
             api.CurrentScene = userMapId;
             sourceCommand.Executed?.Invoke(sourceCommand);
-            api.SendResult(sourceCommand);
+            // api.SendResult(sourceCommand);
+            api.SendResultWithReq(null, reqUUID);
         }
 
         public async void Execute(JSONNode args)
@@ -151,7 +154,7 @@ namespace Simulator.Api.Commands
             }
             catch (Exception e)
             {
-                api.SendError(this, e.Message);
+                api.SendError(this, e.Message, reqUUID);
                 // only unlock in error case as map loading continues in coroutine after which we unlock
                 Executed?.Invoke(this);
             }

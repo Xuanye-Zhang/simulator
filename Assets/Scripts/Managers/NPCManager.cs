@@ -96,6 +96,8 @@ public class NPCManager : MonoBehaviour, IMessageSender, IMessageReceiver
 
     protected bool InitialSpawn = false;
 
+    public List<GameObject> obs_list = new List<GameObject>();
+
     public void RegisterSpawnCallback(SpawnCallbackType callback)
     {
         SpawnCallbacks.Add(callback);
@@ -277,7 +279,76 @@ public class NPCManager : MonoBehaviour, IMessageSender, IMessageReceiver
         return NPCController;
     }
 
-    public List<NPCController> SpawnNPCPool()
+
+    public GameObject SpawnObs(NPCSpawnData spawnData, int basetype, Vector3 basescale)
+    {
+
+        GameObject go = new GameObject();
+
+        GameObject prefab = Resources.Load<GameObject>("Material/NoiseCube");
+        
+        switch (basetype)
+        {
+            case 0:
+                prefab = Resources.Load<GameObject>("Material/NoiseSphere");
+                go.AddComponent<SphereCollider>();
+                break;
+            case 1:
+                prefab = Resources.Load<GameObject>("Material/NoiseCapsule");
+                go.AddComponent<CapsuleCollider>();
+                break;
+            //case 2:
+            //    go = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            //    meshfilter.mesh = go.GetComponent<MeshFilter>().mesh;
+            //    meshfilter.gameObject.AddComponent<MeshRenderer>();
+            //    go.AddComponent<Cylindercollider>();
+            //    break;
+            case 3:
+                //go = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                prefab = Resources.Load<GameObject>("Material/NoiseCube");
+                prefab.name = "basecube";
+                go.AddComponent<BoxCollider>();
+                break;
+            //case 4:
+            //    go = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            //    meshfilter.mesh = go.GetComponent<MeshFilter>().mesh;
+            //    meshfilter.gameObject.AddComponent<MeshRenderer>();
+            //    go.AddComponent<SphereCollider>();
+            //    break;
+            //case 5:
+            //    go = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            //    meshfilter.mesh = go.GetComponent<MeshFilter>().mesh;
+            //    meshfilter.gameObject.AddComponent<MeshRenderer>();
+            //    go.AddComponent<SphereCollider>();
+            //    break;
+        }
+        prefab.transform.position = new Vector3(0,0,0);
+        prefab.transform.rotation =  Quaternion.Euler(new Vector3(0,0,0));
+        prefab.transform.localScale = new Vector3(1,1,1);
+
+
+        go.transform.SetParent(transform);
+        go.transform.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
+
+        Instantiate(prefab, go.transform);
+
+        go.name = "obstacle";
+        go.transform.SetPositionAndRotation(spawnData.Position, spawnData.Rotation);
+        if (Loader.Instance.Network.IsClusterSimulation)
+        {
+            ClusterSimulationUtilities.AddDistributedComponents(go);
+        }
+
+        go.transform.localScale = basescale;
+        // add mesh generator
+        go.AddComponent<mesh_generator>();
+
+        obs_list.Add(go);
+        return go;
+        
+    }
+
+        public List<NPCController> SpawnNPCPool()
     {
         var pooledNPCs = new List<NPCController>();
         var npcsCount = CurrentPooledNPCs.Count;
@@ -443,6 +514,19 @@ public class NPCManager : MonoBehaviour, IMessageSender, IMessageReceiver
         foreach (var npc in npcs)
         {
             DestroyNPC(npc);
+        }
+
+        for (int i = 0; i < obs_list.Count;i++)
+        {
+            var obs = obs_list[i];
+            foreach (Transform child in obs.transform)
+            {
+                Debug.Log(child);
+                Destroy(child.gameObject);
+            }
+            
+            obs_list.Remove(obs);
+            Destroy(obs.gameObject);
         }
 
         CurrentPooledNPCs.Clear();

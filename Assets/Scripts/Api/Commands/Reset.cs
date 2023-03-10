@@ -14,15 +14,18 @@ namespace Simulator.Api.Commands
     {
         public string Name => "simulator/reset";
 
+        static string reqUUID = "";
         private static async Task ResetAsync(Reset sourceCommand)
         {
             var api = ApiManager.Instance;
             await api.Reset();
-            ApiManager.Instance.SendResult(sourceCommand);
+            // ApiManager.Instance.SendResult(sourceCommand);
+            ApiManager.Instance.SendResultWithReq(null, reqUUID);
         }
 
         public void Execute(JSONNode args)
         {
+            reqUUID = args["reqUUID"].Value;
             var nonBlockingTask = ResetAsync(this);
         }
     }

@@ -21,6 +21,8 @@ namespace Simulator.Api.Commands
             var address = args["address"].Value;
             var port = args["port"].AsInt;
 
+            var reqUUID = args["reqUUID"].Value;
+
             var api = ApiManager.Instance;
 
             if (api.Agents.TryGetValue(uid, out GameObject obj))
@@ -28,17 +30,17 @@ namespace Simulator.Api.Commands
                 var bridge = obj.GetComponentInChildren<BridgeClient>();
                 if (bridge == null)
                 {
-                    api.SendError(this, $"Agent '{uid}' is missing bridge client");
+                    api.SendError(this, $"Agent '{uid}' is missing bridge client", reqUUID);
                 }
                 else
                 {
                     bridge.Connect($"{address}:{port}");
-                    api.SendResult(this);
+                    api.SendResultWithReq(null, reqUUID);
                 }
             }
             else
             {
-                api.SendError(this, $"Agent '{uid}' not found");
+                api.SendError(this, $"Agent '{uid}' not found", reqUUID);
             }
         }
     }
